@@ -1,0 +1,50 @@
+version: '2'
+services:
+    roach1:
+        image: cockroachdb/cockroach:beta-20160728
+        ports:
+            - "8080:8080"  
+            - "26257:26257"        
+        networks:
+            - roachnet
+        volumes:
+            - ${ROACH_DATA_ROOT}/roach1:/cockroach/cockroach-data            
+        command: start --insecure
+    
+    roach2:
+        image: cockroachdb/cockroach:beta-20160728
+        depends_on:
+            - roach1       
+        networks:
+            - roachnet
+        volumes:
+            - ${ROACH_DATA_ROOT}/roach2:/cockroach/cockroach-data            
+        command: start --insecure --join=roach1
+
+    roach3:
+        image: cockroachdb/cockroach:beta-20160728
+        depends_on:
+            - roach1        
+        networks:
+            - roachnet
+        volumes:
+            - ${ROACH_DATA_ROOT}/roach3:/cockroach/cockroach-data            
+        command: start --insecure --join=roach1          
+
+    pytests:
+        build:
+            context: ./code
+            dockerfile: Dockerfile  
+        depends_on:
+            - roach1                    
+        networks:
+            - roachnet
+        volumes:
+            # Use this for debug
+            - ${ROACH_TEST_PATH}:/tmp/py-project
+        ports:
+            # debug
+            - "3000:3000"
+
+networks:
+    roachnet:
